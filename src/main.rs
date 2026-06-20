@@ -1,3 +1,5 @@
+mod ollama_scraper;
+
 use axum::{Json, extract::Query, Router, routing::{get}, http::StatusCode, response::IntoResponse};
 use serde_json::{Value, json};
 use tokio::{net::TcpListener};
@@ -32,6 +34,7 @@ impl IntoResponse for ApiError {
 async fn query_ollama(Query(params): Query<SearchParams>) -> Result<Json<Value>, ApiError> {
     let query: String = params.query;
     println!("{} {}", "[ollamadex]".bright_blue(), format!("GET \"/search?query={}\"", query).dimmed());
+    let _ = ollama_scraper::scrape_ollama(query).await.unwrap();
     Err(ApiError::NotFound) // TODO: Implement query functionality
 }
 
