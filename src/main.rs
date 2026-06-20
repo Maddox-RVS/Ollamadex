@@ -33,9 +33,16 @@ impl IntoResponse for ApiError {
 
 async fn query_ollama(Query(params): Query<SearchParams>) -> Result<Json<Value>, ApiError> {
     let query: String = params.query;
-    println!("{} {}", "[ollamadex]".bright_blue(), format!("GET \"/search?query={}\"", query).dimmed());
-    let _ = ollama_scraper::scrape_ollama(query).await.unwrap();
-    Err(ApiError::NotFound) // TODO: Implement query functionality
+    println!("{} {}", "[ollamadex]".bright_blue(), format!("{} \"/search?query={}\"", "GET".green(), query).dimmed());
+
+    let query_results = ollama_scraper::scrape_ollama(query)
+        .await
+        .map_err(|e| {
+            eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Scrape error:".red(), e.to_string().dimmed());
+            ApiError::InternalError
+        })?;
+
+    Ok(Json(json!(query_results)))
 }
 
 fn create_app() -> Router {
