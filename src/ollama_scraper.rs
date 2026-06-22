@@ -5,25 +5,25 @@ use scraper;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ModelVariantData {
-    model_identifier: String,
-    size: String, 
-    context: String,
-    input: String,
-    url: String,
+    pub model_identifier: String,
+    pub size: String, 
+    pub context: String,
+    pub input: String,
+    pub url: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct OllamaModelData {
-    name: String,
-    description: String,
-    capability_tags: Vec<String>,
-    size_tags: Vec<String>,
-    cloud_tag: bool,
-    model_variants: Vec<ModelVariantData>,
-    url: String,
+    pub name: String,
+    pub description: String,
+    pub capability_tags: Vec<String>,
+    pub size_tags: Vec<String>,
+    pub cloud_tag: bool,
+    pub model_variants: Vec<ModelVariantData>,
+    pub url: String,
 }
 
-pub async fn scrape_ollama(query: String) -> Result<Vec<OllamaModelData>, Box<dyn std::error::Error>> {
+pub async fn scrape_ollama(query: &String) -> Result<Vec<OllamaModelData>, Box<dyn std::error::Error>> {
     // search page
     // <ul role="list" class="grid grid-cols-1">
     // ---> <li x-test-model class="flex items-baseline border-b border-neutral-200 py-6"> ... </li>
@@ -51,7 +51,7 @@ pub async fn scrape_ollama(query: String) -> Result<Vec<OllamaModelData>, Box<dy
     // ---> ---> ---> <div class="col-span-2 text-neutral-500 text-[13px]"> {model variant input} </div>
     // ---> and so on ...
 
-    println!("{} {}", "[ollamadex]".bright_blue(), "Scraping Ollama search results...".dimmed());
+    println!("{} {}", "[ollamadex]".bright_blue(), format!("Scraping Ollama search results for \"{}\"...", query).dimmed());
 
     let mut search_results: Vec<OllamaModelData> = vec![];
 
@@ -224,7 +224,7 @@ pub async fn scrape_ollama(query: String) -> Result<Vec<OllamaModelData>, Box<dy
         search_results.push(model_data);
     }
 
-    println!("{} {}", "[ollamadex]".bright_blue(), "Finished scraping Ollama search results.".dimmed());
+    println!("{} {}", "[ollamadex]".bright_blue(), "Finished scraping Ollama search results".dimmed());
 
     Ok(search_results)
 }
