@@ -28,6 +28,21 @@
 
 Welcome to **Ollamadex**, a clean, localized index and management engine designed to tame the expanding ecosystem of local AI. Instead of jumping back and forth to a browser to find the right tool for the job, Ollamadex acts as a private directory that automatically organizes available models, their parameter sizes, capabilities, and specific variants into a single, lightning-fast database on your machine. Built to be entirely self-contained and private, it gives you a deeply queryable inventory of the local AI landscape, making it perfect for powering custom application pickers, automating model workflows, or simply keeping track of the best weights available for your hardware.
 
+<div align="center">
+  <table width="96%">
+    <tr>
+      <td width="50%">
+        <p align="center"><b>Server View</b></p>
+        <img src="assets/OllamadexServerView.gif" width="100%"/>
+      </td>
+      <td width="50%">
+        <p align="center"><b>Client View</b></p>
+        <img src="assets/OllamadexClientView.gif" width="100%"/>
+      </td>
+    </tr>
+  </table>
+</div>
+
 ---
 
 ## Features
