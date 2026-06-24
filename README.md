@@ -30,20 +30,63 @@ Welcome to **Ollamadex**, a clean, localized index and management engine designe
 
 ---
 
+## Features
+
+* **Local-first model index** - scrapes and stores Ollama's model library (names, descriptions, capability tags, size tags, cloud availability, and per-variant details like context length and disk size) into a single SQLite database on your machine.
+* **Fuzzy search caching** - incoming search queries are compared against previously cached queries using Jaro-Winkler string similarity. A close-enough match (≥0.85 similarity) reuses the cached results instead of re-scraping, cutting down on redundant network calls.
+* **On-demand scraping fallback** - if a query has no cached match (or a specific model isn't found by `href`), Ollamadex scrapes ollama.com live, persists the results, and serves them from the database from then on.
+* **Configurable cache staleness** - how long a cached query is considered valid (default: 600 seconds / 10 minutes) is stored in `app_settings` and adjustable at runtime via an authenticated endpoint.
+* **Generated API key auth** - a unique API key (`sk_live_...`) is generated and printed to the console on every server start, required for protected admin actions like updating cache settings.
+* **Simple REST API** - built on [Axum](https://github.com/tokio-rs/axum), exposing endpoints to search, look up a specific model, list everything indexed, and tune caching behavior.
+* **Containerized** - ships with a `Dockerfile` and `docker-compose.yaml` for one-command setup, no local Rust toolchain required.
+
 ## Prerequisites
 
 Before setting up Ollamadex, make sure you have the following installed:
 
 * [Rust & Cargo](https://www.rust-lang.org/tools/install)
 * [Docker](https://docs.docker.com/get-started/get-docker/)
+* [Docker Compose](https://docs.docker.com/compose/install/)
 
 ## Installation & Setup
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/Maddox-RVS/Ollamadex
-   cd Ollamadex
-   ```
+### 1). Clone the repository:
+```bash
+git clone https://github.com/Maddox-RVS/Ollamadex
+cd Ollamadex
+```
+
+### 2). Run it:
+
+**Option A - with Docker Compose (recommended):**
+```bash
+docker compose up --build
+```
+By default the server listens on port `3000`. Override it by setting `PORT`:
+```bash
+  PORT=8080 docker compose up --build
+```
+
+**Option B - with Cargo:**
+```bash
+  cargo run --release -- --port 3000
+```
+
+> On startup, Ollamadex prints a generated API key to the console, save it, as it's required for admin-only endpoints (see below) and isn't persisted between restarts.
+
+## API Reference
+
+> | Method | Route | Description | Auth required |
+> | :--- | :--- | :--- | :--- |
+> | `GET` | `/search?query=<text>` | Searches indexed models, using cached or fuzzy-matched results when available, otherwise scraping ollama.com live. | No |
+> | `POST` | `/find` | Looks up a specific model by `href` and `model_name`, scraping and caching it if not already indexed. | No |
+> | `GET` | `/all` | Returns every model currently indexed in the database. | No |
+> | `POST` | `/cache_stale_seconds` | Updates how long cached search queries remain valid before being re-scraped. | Yes (`api_key`) |
+
+**Example:**
+```bash
+curl "http://localhost:3000/search?query=llama3"
+```
 
 ## Database Schema
 
