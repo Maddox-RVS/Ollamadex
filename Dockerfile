@@ -44,5 +44,5 @@ RUN cargo build --release
 # ----------------------------------
 # Run the server on container start
 # ----------------------------------
-CMD ["sh", "-c", "./target/release/ollamadex --port ${PORT:-3000}"]
+CMD ./target/release/ollamadex --port ${PORT:-3000}
 # ----------------------------------

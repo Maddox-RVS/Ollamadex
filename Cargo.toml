@@ -8,6 +8,7 @@ axum = "0.8.9"
 chrono = { version = "0.4.45", features = ["serde"] }
 clap = { version = "4.6.1", features = ["derive"] }
 owo-colors = "4.3.0"
+rand = "0.10.1"
 reqwest = "0.13.4"
 scraper = "0.27.0"
 serde = { version = "1.0.228", features = ["derive"] }

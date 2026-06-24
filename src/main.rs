@@ -2,6 +2,8 @@ mod ollama_scraper;
 mod database;
 
 use axum::{Json, Router, extract::{Path, Query}, http::StatusCode, response::IntoResponse, routing::{get, post}};
+use crate::ollama_scraper::OllamaModelData;
+use rand::{RngExt, distr::Alphanumeric};
 use tokio::{net::TcpListener};
 use serde_json::{Value, json};
 use owo_colors::OwoColorize;
@@ -9,8 +11,6 @@ use sqlx::{Pool, Sqlite};
 use axum::extract::State;
 use serde::Deserialize;
 use clap::Parser;
-
-use crate::ollama_scraper::OllamaModelData;
 
 #[derive(Deserialize)]
 struct SearchParams {
@@ -36,8 +36,20 @@ impl IntoResponse for ApiError {
     }
 }
 
-async fn query_ollama(State(pool): State<Pool<Sqlite>>, Query(params): Query<SearchParams>) -> Result<Json<Value>, ApiError> {
+async fn generate_api_key(prefix: &str) -> String {
+    let secret: String = rand::rng()
+        .sample_iter(&Alphanumeric)
+        .take(32)
+        .map(char::from)
+        .collect();
+
+    format!("{}_{}", prefix, secret)
+}
+
+async fn query_ollama(State(app_state): State<AppState>, Query(params): Query<SearchParams>) -> Result<Json<Value>, ApiError> {
     const ACCEPTED_SIMILARITY_THRESHOLD: f64 = 0.85;
+
+    let pool = &app_state.pool;
 
     let query: String = params.query.trim().to_lowercase();
     println!("{} {}", "[ollamadex]".bright_blue(), format!("{} \"/search?query={}\"", "GET".green(), &query).dimmed());
@@ -109,9 +121,11 @@ async fn query_ollama(State(pool): State<Pool<Sqlite>>, Query(params): Query<Sea
     }
 }
 
-async fn find_model(State(pool): State<Pool<Sqlite>>, Json(params): Json<FindModelParams>) -> Result<Json<Value>, ApiError> {
+async fn find_model(State(app_state): State<AppState>, Json(params): Json<FindModelParams>) -> Result<Json<Value>, ApiError> {
     let FindModelParams { href, model_name} = params;
     println!("{} {}", "[ollamadex]".bright_blue(), format!("{} \"/find{}\"", "GET".green(), &href).dimmed());
+
+    let pool = &app_state.pool;
 
     let model: Option<OllamaModelData> = database::find_model_by_href(&pool, &href).await.map_err(|e| {
         eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Database error:".red(), e.to_string().dimmed());
@@ -151,18 +165,65 @@ async fn find_model(State(pool): State<Pool<Sqlite>>, Json(params): Json<FindMod
     }
 }
 
+async fn get_all_models(State(app_state): State<AppState>) -> Result<Json<Value>, ApiError> {
+    println!("{} {}", "[ollamadex]".bright_blue(), format!("{} \"/all\"", "GET".green()).dimmed());
+
+    let pool = &app_state.pool;
+
+    let models: Vec<OllamaModelData> = database::get_all_models(&pool).await.map_err(|e| {
+        eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Database error:".red(), e.to_string().dimmed());
+        ApiError::InternalError
+    })?;
+
+    Ok(Json(json!(models)))
+}
+
+async fn set_cache_stale_seconds(State(app_state): State<AppState>, Json(params): Json<SetCacheStaleParams>) -> Result<Json<Value>, ApiError> {
+    let SetCacheStaleParams { cache_stale_seconds, api_key } = params;
+    println!("{} {}", "[ollamadex]".bright_blue(), format!("{} \"/cache_stale_seconds\"", "POST".green()).dimmed());
+
+    if api_key != app_state.api_key {
+        println!("{} {} {}", "[ollamadex]".bright_blue(), "REJECTED".red(), "Invalid API key provided for setting cache stale seconds".dimmed());
+        return Err(ApiError::InvalidInput("Invalid API key".into()));
+    }
+
+    let pool = &app_state.pool;
+
+    database::set_time_for_stale_query(&pool, cache_stale_seconds).await.map_err(|e| {
+        eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Database error:".red(), e.to_string().dimmed());
+        ApiError::InternalError
+    })?;
+
+    Ok(Json(json!({"message": "Cache stale seconds updated successfully"})))
+}
+
 #[derive(Deserialize)]
 struct FindModelParams {
     href: String,
     model_name: String,
 }
 
-fn create_app(pool: Pool<Sqlite>) -> Router {
+#[derive(Deserialize)]
+struct SetCacheStaleParams {
+    cache_stale_seconds: i64,
+    api_key: String,
+}
+
+#[derive(Clone)]
+struct AppState {
+    pool: Pool<Sqlite>,
+    api_key: String,
+}
+
+fn create_app(pool: Pool<Sqlite>, api_key: String) -> Router {
+    let app_state = AppState { pool, api_key };
 
     Router::new()
         .route("/search", get(query_ollama))
         .route("/find", post(find_model))
-        .with_state(pool)
+        .route("/all", get(get_all_models))
+        .route("/cache_stale_seconds", post(set_cache_stale_seconds))
+        .with_state(app_state)
 }
 
 #[derive(Parser, Debug)]
@@ -184,7 +245,10 @@ async fn main() {
     println!("{}", "██║   ██║██║     ██║     ██╔══██║██║╚██╔╝██║██╔══██║██║  ██║██╔══╝   ██╔██╗ ".bright_blue());
     println!("{}", "╚██████╔╝███████╗███████╗██║  ██║██║ ╚═╝ ██║██║  ██║██████╔╝███████╗██╔╝ ██╗".bright_blue());
     println!("{}", " ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝╚═════╝ ╚══════╝╚═╝  ╚═╝".bright_blue()); 
-    println!();                                                                      
+    println!(); 
+    
+    let api_key = generate_api_key("sk_live").await;
+    println!("{} {} {}", "[ollamadex]".bright_blue(), "Generated API Key:".dimmed(), api_key.green().bold());
     
     let pool = database::initialize_database().await.unwrap_or_else(|e| {
         eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Failed to initialize database:".red(), e.to_string().dimmed());
@@ -193,9 +257,9 @@ async fn main() {
 
     println!("{} {}", "[ollamadex]".bright_blue(), "Initializing \"ollamadex\" server...".dimmed());
 
-    let app = create_app(pool);
+    let app = create_app(pool, api_key);
 
-    let listener = TcpListener::bind("0.0.0.0:3000").await
+    let listener = TcpListener::bind(format!("0.0.0.0:{}", port)).await
         .unwrap_or_else(|_| {
             eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Failed to bind to port:".red(), port.bold().red());
             std::process::exit(1);

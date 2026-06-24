@@ -301,3 +301,55 @@ pub async fn find_model_by_href(pool: &Pool<Sqlite>, href: &str) -> Result<Optio
 
     Ok(Some(model_data))
 }
+
+pub async fn get_all_models(pool: &Pool<Sqlite>) -> Result<Vec<OllamaModelData>, sqlx::Error> {
+    let model_rows: Vec<(i64, String, String, String, String, bool, String)> = sqlx::query_as(
+        "SELECT id, name, description, capability_tags, size_tags, cloud_tag, url
+         FROM models"
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let mut results: Vec<OllamaModelData> = Vec::new();
+
+    for (model_id, name, description, capability_tags_json, size_tags_json, cloud_tag, url) in model_rows {
+        let capability_tags: Vec<String> = serde_json::from_str(&capability_tags_json)
+            .unwrap_or_else(|_| Vec::new());
+        let size_tags: Vec<String> = serde_json::from_str(&size_tags_json)
+            .unwrap_or_else(|_| Vec::new());
+
+        let variant_rows: Vec<(String, String, String, String, String)> = sqlx::query_as(
+            "SELECT model_identifier, size, context, input, url
+             FROM model_variants
+             WHERE model_id = ?"
+        )
+        .bind(model_id)
+        .fetch_all(pool)
+        .await?;
+
+        let model_variants: Vec<ModelVariantData> = variant_rows
+            .into_iter()
+            .map(|(model_identifier, size, context, input, variant_url)| ModelVariantData {
+                model_identifier,
+                size,
+                context,
+                input,
+                url: variant_url,
+            })
+            .collect();
+
+        results.push(OllamaModelData {
+            name,
+            description,
+            capability_tags,
+            size_tags,
+            cloud_tag,
+            model_variants,
+            url,
+        });
+    }
+
+    println!("{} {}", "[ollamadex]".bright_blue(), format!("Retrieved all {} models from database", results.len()).dimmed());
+
+    Ok(results)
+}

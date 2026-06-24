@@ -224,7 +224,7 @@ pub async fn scrape_ollama(query: &String) -> Result<Vec<OllamaModelData>, Box<d
         search_results.push(model_data);
     }
 
-    println!("{} {}", "[ollamadex]".bright_blue(), "Finished scraping Ollama search results".dimmed());
+    println!("{} {} {}", "[ollamadex]".bright_blue(), "Finished scraping Ollama search results for \"{}\"".dimmed(), format!("{}", &query).dimmed());
 
     Ok(search_results)
 }
