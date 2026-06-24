@@ -32,22 +32,13 @@ Welcome to **Ollamadex**, a clean, localized index and management engine designe
 
 ## Features
 
-<div style="
-  border: 1px solid rgba(128, 128, 128, 0.3); 
-  border-radius: 8px; 
-  padding: 15px; 
-  margin-bottom: 15px;
-">
-<ul>
-<li><b>Local-first model index</b>: scrapes and stores Ollama's model library (names, descriptions, capability tags, size tags, cloud availability, and per-variant details like context length and disk size) into a single SQLite database on your machine.</li>
-<li><b>Fuzzy search caching</b>: incoming search queries are compared against previously cached queries using Jaro-Winkler string similarity. A close-enough match (similarity of 0.85 or higher) reuses the cached results instead of re-scraping, cutting down on redundant network calls.</li>
-<li><b>On-demand scraping fallback</b>: if a query has no cached match (or a specific model isn't found by <code>href</code>), Ollamadex scrapes ollama.com live, persists the results, and serves them from the database from then on.</li>
-<li><b>Configurable cache staleness</b>: how long a cached query is considered valid (default 600 seconds, or 10 minutes) is stored in <code>app_settings</code> and adjustable at runtime via an authenticated endpoint.</li>
-<li><b>Generated API key auth</b>: a unique API key (<code>sk_live_...</code>) is generated and printed to the console on every server start, required for protected admin actions like updating cache settings.</li>
-<li><b>Simple REST API</b>: built on <a href="https://github.com/tokio-rs/axum">Axum</a>, exposing endpoints to search, look up a specific model, list everything indexed, and tune caching behavior.</li>
-<li><b>Containerized</b>: ships with a <code>Dockerfile</code> and <code>docker-compose.yaml</code> for one-command setup, with no local Rust toolchain required.</li>
-</ul>
-</div>
+> * **Local-first model index** - scrapes and stores Ollama's model library (names, descriptions, capability tags, size tags, cloud availability, and per-variant details like context length and disk size) into a single SQLite database on your machine.
+> * **Fuzzy search caching** - incoming search queries are compared against previously cached queries using Jaro-Winkler string similarity. A close-enough match (≥0.85 similarity) reuses the cached results instead of re-scraping, cutting down on redundant network calls.
+> * **On-demand scraping fallback** - if a query has no cached match (or a specific model isn't found by `href`), Ollamadex scrapes ollama.com live, persists the results, and serves them from the database from then on.
+> * **Configurable cache staleness** - how long a cached query is considered valid (default: 600 seconds / 10 minutes) is stored in `app_settings` and adjustable at runtime via an authenticated endpoint.
+> * **Generated API key auth** - a unique API key (`sk_live_...`) is generated and printed to the console on every server start, required for protected admin actions like updating cache settings.
+> * **Simple REST API** - built on [Axum](https://github.com/tokio-rs/axum), exposing endpoints to search, look up a specific model, list everything indexed, and tune caching behavior.
+> * **Containerized** - ships with a `Dockerfile` and `docker-compose.yaml` for one-command setup, no local Rust toolchain required.
 
 ## Prerequisites
 
