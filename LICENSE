@@ -1,0 +1,20 @@
+The Maddox-RVS Open License
+
+Copyright (c) 2026 Maddox-RVS (https://github.com/Maddox-RVS)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, subject to the following strict conditions:
+
+1. Copyleft (Share-Alike)
+Any modified versions, derivative works, or projects that incorporate this Software (in whole or in part) must be distributed and licensed entirely under the terms of this exact same license. You may not impose any further restrictions on the rights granted or required here.
+
+2. Strict Attribution
+If you use, modify, distribute, or incorporate this Software into your own project, you must provide clear attribution to the original author. This attribution must include the following direct link: https://github.com/Maddox-RVS. 
+
+This link must be explicitly visible and preserved in both:
+* The primary documentation file of the derivative work (e.g., the README.md or equivalent).
+* The LICENSE file of the derivative work.
+
+3. Source Code Availability
+If you distribute derivative works of this Software in a compiled, object, or executable form, you must also make the human-readable source code of your derivative work available to the recipients under this same license.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
