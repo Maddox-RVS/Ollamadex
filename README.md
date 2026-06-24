@@ -1,6 +1,6 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/Maddox-RVS/Ollamadex?style=for-the-badge)
 ![GitHub repo size](https://img.shields.io/github/repo-size/Maddox-RVS/Ollamadex?style=for-the-badge)
-![GitHub License](https://img.shields.io/github/license/Maddox-RVS/Ollamadex?style=for-the-badge)
+[![License](https://img.shields.io/badge/License-Maddox--RVS_Open-blue?style=for-the-badge)](LICENSE)
 
 ![Ollama](https://img.shields.io/badge/Ollama-Ecosystem-black?style=for-the-badge)
 ![Local AI](https://img.shields.io/badge/Local_AI-Ready-blue?style=for-the-badge)
