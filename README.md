@@ -1,3 +1,16 @@
+![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white)
+![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
+
+![Ollama](https://img.shields.io/badge/Ollama-Ecosystem-black?style=for-the-badge)
+![Local AI](https://img.shields.io/badge/Local_AI-Ready-blue?style=for-the-badge)
+
+![GitHub last commit](https://img.shields.io/github/last-commit/Maddox-RVS/Ollamadex?style=for-the-badge)
+![GitHub repo size](https://img.shields.io/github/repo-size/Maddox-RVS/Ollamadex?style=for-the-badge)
+![GitHub License](https://img.shields.io/github/license/Maddox-RVS/Ollamadex?style=for-the-badge)
+
+
+
 <div align="center">
   <div style="
     border: 1px solid rgba(128, 128, 128, 0.3); 
