@@ -103,16 +103,80 @@ On startup, Ollamadex prints a generated API key to the console, save it, as it'
 
 ## API Reference
 
-> | Method | Route | Description | Auth required |
-> | :--- | :--- | :--- | :--- |
-> | `GET` | `/search?query=<text>` | Searches indexed models, using cached or fuzzy-matched results when available, otherwise scraping ollama.com live. | No |
-> | `POST` | `/find` | Looks up a specific model by `href` and `model_name`, scraping and caching it if not already indexed. | No |
-> | `GET` | `/all` | Returns every model currently indexed in the database. | No |
-> | `POST` | `/cache_stale_seconds` | Updates how long cached search queries remain valid before being re-scraped. | Yes (`api_key`) |
+### `GET /search`
+
+> Searches the local cache for models matching a query, scraping and indexing fresh results from ollama.com if no sufficiently similar cached search exists yet.
+
+| Query Param | Type     | Required | Description                      |
+| ----------- | -------- | -------- | -------------------------------- |
+| `query`     | `string` | Yes      | The search term to look up       |
 
 **Example:**
 ```bash
 curl "http://localhost:3000/search?query=llama3"
+```
+
+### `POST /find`
+
+> Looks up a specific model by its ollama.com page path, scraping and indexing it if it isn't already in the local database.
+
+**Body:**
+| Field        | Type     | Required | Description                                              |
+| ------------ | -------- | -------- | ---------------------------------------------------------- |
+| `href`       | `string` | Yes      | The model's page path (e.g. `"/library/llama3.3"`)        |
+| `model_name` | `string` | Yes      | The model name to scrape with |
+
+**Example:**
+```json
+{
+  "href": "/library/llama3.3",
+  "model_name": "llama3.3"
+}
+```
+
+### `GET /all`
+
+> Returns every model currently indexed in the local database.
+
+No parameters required.
+
+### `POST /cache_stale_seconds`
+
+> Updates how long (in seconds) a cached search is considered fresh before a new scrape is triggered. Requires a valid `api_key`.
+
+**Body:**
+| Field                  | Type    | Required | Description                                  |
+| ---------------------- | ------- | -------- | --------------------------------------------- |
+| `cache_stale_seconds`  | `i64`   | Yes      | New staleness threshold, in seconds           |
+| `api_key`              | `string`| Yes      | Server-issued API key (printed on startup)    |
+
+### `GET /cache_similarity_threshold`
+
+> Returns the current similarity threshold (0.0–1.0) used to decide whether an incoming query is "close enough" to a previously cached search to reuse its results instead of re-scraping.
+
+No parameters required.
+
+**Example response:**
+```json
+{ "cache_similarity_threshold": 0.85 }
+```
+
+### `POST /cache_similarity_threshold`
+
+> Updates the similarity threshold used for cache matching. Requires a valid `api_key`.
+
+**Body:**
+| Field                          | Type     | Required | Description                                          |
+| ------------------------------ | -------- | -------- | ----------------------------------------------------- |
+| `cache_similarity_threshold`   | `f64`    | Yes      | New threshold, must be between `0.0` and `1.0`        |
+| `api_key`                      | `string` | Yes      | Server-issued API key (printed on startup)            |
+
+**Example:**
+```json
+{
+  "cache_similarity_threshold": 0.9,
+  "api_key": "your_api_key"
+}
 ```
 
 ## Database Schema
