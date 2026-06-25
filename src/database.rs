@@ -32,6 +32,12 @@ pub async fn initialize_database() -> Result<Pool<Sqlite>, sqlx::Error> {
     .await?;
 
     sqlx::query(
+    "INSERT OR IGNORE INTO app_settings (key, value) VALUES ('cache_similarity_threshold', '0.85');" // Minimum similarity (0.0-1.0) for a query to match a cached search
+    )
+    .execute(&pool)
+    .await?;
+
+    sqlx::query(
     "CREATE TABLE IF NOT EXISTS search_cache (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             query TEXT NOT NULL UNIQUE,
@@ -352,4 +358,25 @@ pub async fn get_all_models(pool: &Pool<Sqlite>) -> Result<Vec<OllamaModelData>,
     println!("{} {}", "[ollamadex]".bright_blue(), format!("Retrieved all {} models from database", results.len()).dimmed());
 
     Ok(results)
+}
+
+pub async fn get_cache_similarity_threshold(pool: &Pool<Sqlite>) -> Result<f64, sqlx::Error> {
+    let threshold_str: String = sqlx::query_scalar(
+        "SELECT value FROM app_settings WHERE key = 'cache_similarity_threshold'"
+    )
+    .fetch_one(pool)
+    .await?;
+
+    let threshold: f64 = threshold_str.parse().unwrap_or(0.85);
+
+    Ok(threshold)
+}
+
+pub async fn set_cache_similarity_threshold(pool: &Pool<Sqlite>, threshold: f64) -> Result<(), sqlx::Error> {
+    sqlx::query("UPDATE app_settings SET value = ? WHERE key = 'cache_similarity_threshold'")
+        .bind(threshold.to_string())
+        .execute(pool)
+        .await?;
+
+    Ok(())
 }

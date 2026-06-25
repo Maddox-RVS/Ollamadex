@@ -47,9 +47,12 @@ async fn generate_api_key(prefix: &str) -> String {
 }
 
 async fn query_ollama(State(app_state): State<AppState>, Query(params): Query<SearchParams>) -> Result<Json<Value>, ApiError> {
-    const ACCEPTED_SIMILARITY_THRESHOLD: f64 = 0.85;
-
     let pool = &app_state.pool;
+
+    let accepted_similarity_threshold: f64 = database::get_cache_similarity_threshold(&pool).await.map_err(|e| {
+        eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Database error:".red(), e.to_string().dimmed());
+        ApiError::InternalError
+    })?;
 
     let query: String = params.query.trim().to_lowercase();
     println!("{} {}", "[ollamadex]".bright_blue(), format!("{} \"/search?query={}\"", "GET".green(), &query).dimmed());
@@ -73,7 +76,7 @@ async fn query_ollama(State(app_state): State<AppState>, Query(params): Query<Se
         .max_by(|(_, score_a), (_, score_b)| score_a.partial_cmp(score_b).unwrap());
 
     let result: Option<String> = match best_match {
-        Some((matched_query, score)) if score >= ACCEPTED_SIMILARITY_THRESHOLD => Some(matched_query),
+        Some((matched_query, score)) if score >= accepted_similarity_threshold => Some(matched_query),
         _ => None,
     };
 
@@ -119,6 +122,12 @@ async fn query_ollama(State(app_state): State<AppState>, Query(params): Query<Se
             Ok(Json(json!(query_results)))
         }
     }
+}
+
+#[derive(Deserialize)]
+struct FindModelParams {
+    href: String,
+    model_name: String,
 }
 
 async fn find_model(State(app_state): State<AppState>, Json(params): Json<FindModelParams>) -> Result<Json<Value>, ApiError> {
@@ -178,6 +187,12 @@ async fn get_all_models(State(app_state): State<AppState>) -> Result<Json<Value>
     Ok(Json(json!(models)))
 }
 
+#[derive(Deserialize)]
+struct SetCacheStaleParams {
+    cache_stale_seconds: i64,
+    api_key: String,
+}
+
 async fn set_cache_stale_seconds(State(app_state): State<AppState>, Json(params): Json<SetCacheStaleParams>) -> Result<Json<Value>, ApiError> {
     let SetCacheStaleParams { cache_stale_seconds, api_key } = params;
     println!("{} {}", "[ollamadex]".bright_blue(), format!("{} \"/cache_stale_seconds\"", "POST".green()).dimmed());
@@ -198,15 +213,46 @@ async fn set_cache_stale_seconds(State(app_state): State<AppState>, Json(params)
 }
 
 #[derive(Deserialize)]
-struct FindModelParams {
-    href: String,
-    model_name: String,
+struct SetCacheSimilarityParams {
+    cache_similarity_threshold: f64,
+    api_key: String,
 }
 
-#[derive(Deserialize)]
-struct SetCacheStaleParams {
-    cache_stale_seconds: i64,
-    api_key: String,
+async fn set_cache_similarity_threshold(State(app_state): State<AppState>, Json(params): Json<SetCacheSimilarityParams>) -> Result<Json<Value>, ApiError> {
+    let SetCacheSimilarityParams { cache_similarity_threshold, api_key } = params;
+    println!("{} {}", "[ollamadex]".bright_blue(), format!("{} \"/cache_similarity_threshold\"", "POST".green()).dimmed());
+    
+    if api_key != app_state.api_key {
+        println!("{} {} {}", "[ollamadex]".bright_blue(), "REJECTED".red(), "Invalid API key provided for setting cache similarity threshold".dimmed());
+        return Err(ApiError::InvalidInput("Invalid API key".into()));
+    }
+
+    if cache_similarity_threshold < 0.0 || cache_similarity_threshold > 1.0 {
+        println!("{} {}", "[ollamadex]".bright_blue(), format!("Failed to set cache similarity, passed value of {} was not between 0 and 1", cache_similarity_threshold).dimmed());
+        return Err(ApiError::InvalidInput(format!("Failed to set cache similarity, passed value of {} was not between 0 and 1", cache_similarity_threshold)));
+    }
+
+    let pool = &app_state.pool;
+
+    database::set_cache_similarity_threshold(&pool, cache_similarity_threshold).await.map_err(|e| {
+        eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Database error:".red(), e.to_string().dimmed());
+        ApiError::InternalError
+    })?;
+
+    Ok(Json(json!({"message": "Cache similarity threshold updated successfully"})))
+}
+
+async fn get_cache_similarity_threshold(State(app_state): State<AppState>) -> Result<Json<Value>, ApiError> {
+    println!("{} {}", "[ollamadex]".bright_blue(), format!("{} \"/cache_similarity_threshold\"", "GET".green()).dimmed());
+
+    let pool = &app_state.pool;
+
+    let threshold: f64 = database::get_cache_similarity_threshold(&pool).await.map_err(|e| {
+        eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Database error:".red(), e.to_string().dimmed());
+        ApiError::InternalError
+    })?;
+
+    Ok(Json(json!({"cache_similarity_threshold": threshold})))
 }
 
 #[derive(Clone)]
@@ -223,6 +269,8 @@ fn create_app(pool: Pool<Sqlite>, api_key: String) -> Router {
         .route("/find", post(find_model))
         .route("/all", get(get_all_models))
         .route("/cache_stale_seconds", post(set_cache_stale_seconds))
+        .route("/cache_similarity_threshold", get(get_cache_similarity_threshold))
+        .route("/cache_similarity_threshold", post(set_cache_similarity_threshold))
         .with_state(app_state)
 }
 
