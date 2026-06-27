@@ -42,13 +42,13 @@ Welcome to **Ollamadex**, a clean, localized index and management engine designe
 <div align="center">
   <table width="96%">
     <tr>
-      <td width="50%">
-        <p align="center"><b>Server View</b></p>
-        <img src="assets/OllamadexServerView.gif" width="100%"/>
+      <td width="50%" align="center">
+        <p><b>Server View</b></p>
+        <img src="assets/OllamadexServerView.gif" height="300"/>
       </td>
-      <td width="50%">
-        <p align="center"><b>Client View</b></p>
-        <img src="assets/OllamadexClientView.gif" width="100%"/>
+      <td width="50%" align="center">
+        <p><b>Client View</b></p>
+        <img src="assets/OllamadexClientView.gif" height="300"/>
       </td>
     </tr>
   </table>
