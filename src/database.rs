@@ -369,6 +369,8 @@ pub async fn get_cache_similarity_threshold(pool: &Pool<Sqlite>) -> Result<f64, 
 
     let threshold: f64 = threshold_str.parse().unwrap_or(0.85);
 
+    println!("{} {}", "[ollamadex]".bright_blue(), format!("Retrieved cache similarity threshold: {}", threshold).dimmed());
+
     Ok(threshold)
 }
 
@@ -377,6 +379,8 @@ pub async fn set_cache_similarity_threshold(pool: &Pool<Sqlite>, threshold: f64)
         .bind(threshold.to_string())
         .execute(pool)
         .await?;
+
+    println!("{} {}", "[ollamadex]".bright_blue(), format!("Updated cache similarity threshold to: {}", threshold).dimmed());
 
     Ok(())
 }

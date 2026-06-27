@@ -1,9 +1,8 @@
 mod ollama_scraper;
 mod database;
 
-use axum::{Json, Router, extract::{Path, Query}, http::StatusCode, response::IntoResponse, routing::{get, post}};
+use axum::{Json, Router, extract::Query, http::StatusCode, response::IntoResponse, routing::{get, post}};
 use crate::ollama_scraper::OllamaModelData;
-use rand::{RngExt, distr::Alphanumeric};
 use tokio::{net::TcpListener};
 use serde_json::{Value, json};
 use owo_colors::OwoColorize;
@@ -11,6 +10,8 @@ use sqlx::{Pool, Sqlite};
 use axum::extract::State;
 use serde::Deserialize;
 use clap::Parser;
+use std::env;
+use dotenvy;
 
 #[derive(Deserialize)]
 struct SearchParams {
@@ -36,20 +37,10 @@ impl IntoResponse for ApiError {
     }
 }
 
-async fn generate_api_key(prefix: &str) -> String {
-    let secret: String = rand::rng()
-        .sample_iter(&Alphanumeric)
-        .take(32)
-        .map(char::from)
-        .collect();
-
-    format!("{}_{}", prefix, secret)
-}
-
 async fn query_ollama(State(app_state): State<AppState>, Query(params): Query<SearchParams>) -> Result<Json<Value>, ApiError> {
     let pool = &app_state.pool;
 
-    let accepted_similarity_threshold: f64 = database::get_cache_similarity_threshold(&pool).await.map_err(|e| {
+    let aaccepted_similarity_threshold: f64 = database::get_cache_similarity_threshold(&pool).await.map_err(|e| {
         eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Database error:".red(), e.to_string().dimmed());
         ApiError::InternalError
     })?;
@@ -76,7 +67,7 @@ async fn query_ollama(State(app_state): State<AppState>, Query(params): Query<Se
         .max_by(|(_, score_a), (_, score_b)| score_a.partial_cmp(score_b).unwrap());
 
     let result: Option<String> = match best_match {
-        Some((matched_query, score)) if score >= accepted_similarity_threshold => Some(matched_query),
+        Some((matched_query, score)) if score >= aaccepted_similarity_threshold => Some(matched_query),
         _ => None,
     };
 
@@ -294,9 +285,13 @@ async fn main() {
     println!("{}", "╚██████╔╝███████╗███████╗██║  ██║██║ ╚═╝ ██║██║  ██║██████╔╝███████╗██╔╝ ██╗".bright_blue());
     println!("{}", " ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝╚═════╝ ╚══════╝╚═╝  ╚═╝".bright_blue()); 
     println!(); 
+
+    dotenvy::dotenv().ok();
     
-    let api_key = generate_api_key("sk_live").await;
-    println!("{} {} {}", "[ollamadex]".bright_blue(), "Generated API Key:".dimmed(), api_key.green().bold());
+    let api_key = env::var("ADMIN_API_KEY").unwrap_or_else(|_| {
+        eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Failed to get ADMIN_API_KEY from environment variables:".red(), "Please set the ADMIN_API_KEY environment variable in your \".env\" file".dimmed());
+        std::process::exit(1);
+    });
     
     let pool = database::initialize_database().await.unwrap_or_else(|e| {
         eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Failed to initialize database:".red(), e.to_string().dimmed());

@@ -62,7 +62,7 @@ Welcome to **Ollamadex**, a clean, localized index and management engine designe
 > * **Fuzzy search caching** - incoming search queries are compared against previously cached queries using Jaro-Winkler string similarity. A close-enough match (≥0.85 similarity) reuses the cached results instead of re-scraping, cutting down on redundant network calls.
 > * **On-demand scraping fallback** - if a query has no cached match (or a specific model isn't found by `href`), Ollamadex scrapes ollama.com live, persists the results, and serves them from the database from then on.
 > * **Configurable cache staleness** - how long a cached query is considered valid (default: 600 seconds / 10 minutes) is stored in `app_settings` and adjustable at runtime via an authenticated endpoint.
-> * **Generated API key auth** - a unique API key (`sk_live_...`) is generated and printed to the console on every server start, required for protected admin actions like updating cache settings.
+> * **Environment-based API key auth** - the server requires a pre-configured ADMIN_API_KEY to be set in your root `.env` file on startup for admin actions (e.g., updating cache settings).
 > * **Simple REST API** - built on [Axum](https://github.com/tokio-rs/axum), exposing endpoints to search, look up a specific model, list everything indexed, and tune caching behavior.
 > * **Containerized** - ships with a `Dockerfile` and `docker-compose.yaml` for one-command setup, no local Rust toolchain required.
 
@@ -83,7 +83,16 @@ Before setting up Ollamadex, make sure you have the following installed:
 > cd Ollamadex
 > ```
 
-### 2). Run it:
+### 2). Configure API Key:
+
+Create a `.env` file in the root of your project directory and set your administrative API key. This key is required for all protected endpoints like updating cache settings or thresholds:
+
+> **`.env`**  
+> ```bash
+> ADMIN_API_KEY=your_secure_api_key_here
+> ```
+
+### 3). Run it:
 
 > **Option A - with Docker Compose (recommended):**
 > ```bash
@@ -99,7 +108,7 @@ Before setting up Ollamadex, make sure you have the following installed:
 > cargo run --release -- --port 3000
 > ```
 
-On startup, Ollamadex prints a generated API key to the console, save it, as it's required for admin-only endpoints (see below) and isn't persisted between restarts.
+**Note:** *If the `.env` file is missing or `ADMIN_API_KEY` cannot be read, the server will panic on startup and print an error requesting the `ADMIN_API_KEY` be set properly in the `.env` file.*
 
 ## API Reference
 
