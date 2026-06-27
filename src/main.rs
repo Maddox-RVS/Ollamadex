@@ -40,7 +40,7 @@ impl IntoResponse for ApiError {
 async fn query_ollama(State(app_state): State<AppState>, Query(params): Query<SearchParams>) -> Result<Json<Value>, ApiError> {
     let pool = &app_state.pool;
 
-    let aaccepted_similarity_threshold: f64 = database::get_cache_similarity_threshold(&pool).await.map_err(|e| {
+    let accepted_similarity_threshold: f64 = database::get_cache_similarity_threshold(&pool).await.map_err(|e| {
         eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Database error:".red(), e.to_string().dimmed());
         ApiError::InternalError
     })?;
@@ -67,7 +67,7 @@ async fn query_ollama(State(app_state): State<AppState>, Query(params): Query<Se
         .max_by(|(_, score_a), (_, score_b)| score_a.partial_cmp(score_b).unwrap());
 
     let result: Option<String> = match best_match {
-        Some((matched_query, score)) if score >= aaccepted_similarity_threshold => Some(matched_query),
+        Some((matched_query, score)) if score >= accepted_similarity_threshold => Some(matched_query),
         _ => None,
     };
 
