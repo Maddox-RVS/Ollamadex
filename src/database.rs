@@ -112,53 +112,61 @@ pub async fn add_query(pool: &Pool<Sqlite>, query: &str) -> Result<(), sqlx::Err
     Ok(())
 }
 
-pub async fn save_model(pool: &Pool<Sqlite>, model: &OllamaModelData) -> Result<(), sqlx::Error> {
-    let capability_tags_json = serde_json::to_string(&model.capability_tags)
-        .unwrap_or_else(|_| "[]".to_string());
-    let size_tags_json = serde_json::to_string(&model.size_tags)
-        .unwrap_or_else(|_| "[]".to_string());
+pub async fn save_models(pool: &Pool<Sqlite>, models: &[OllamaModelData]) -> Result<(), sqlx::Error> {
+    let mut tx = pool.begin().await?;
 
-    let model_id: i64 = sqlx::query_scalar(
-        "INSERT INTO models (name, description, capability_tags, size_tags, cloud_tag, url)
-         VALUES (?, ?, ?, ?, ?, ?)
-         ON CONFLICT(url) DO UPDATE SET
-            name = excluded.name,
-            description = excluded.description,
-            capability_tags = excluded.capability_tags,
-            size_tags = excluded.size_tags,
-            cloud_tag = excluded.cloud_tag
-         RETURNING id"
-    )
-    .bind(&model.name)
-    .bind(&model.description)
-    .bind(&capability_tags_json)
-    .bind(&size_tags_json)
-    .bind(model.cloud_tag)
-    .bind(&model.url)
-    .fetch_one(pool)
-    .await?;
+    for model in models {
+        let capability_tags_json = serde_json::to_string(&model.capability_tags)
+            .unwrap_or_else(|_| "[]".to_string());
+        let size_tags_json = serde_json::to_string(&model.size_tags)
+            .unwrap_or_else(|_| "[]".to_string());
 
-    sqlx::query("DELETE FROM model_variants WHERE model_id = ?")
-        .bind(model_id)
-        .execute(pool)
-        .await?;
-
-    for variant in &model.model_variants {
-        sqlx::query(
-            "INSERT INTO model_variants (model_id, model_identifier, size, context, input, url)
-             VALUES (?, ?, ?, ?, ?, ?)"
+        let model_id: i64 = sqlx::query_scalar(
+            "INSERT INTO models (name, description, capability_tags, size_tags, cloud_tag, url)
+             VALUES (?, ?, ?, ?, ?, ?)
+             ON CONFLICT(url) DO UPDATE SET
+                name = excluded.name,
+                description = excluded.description,
+                capability_tags = excluded.capability_tags,
+                size_tags = excluded.size_tags,
+                cloud_tag = excluded.cloud_tag
+             RETURNING id"
         )
-        .bind(model_id)
-        .bind(&variant.model_identifier)
-        .bind(&variant.size)
-        .bind(&variant.context)
-        .bind(&variant.input)
-        .bind(&variant.url)
-        .execute(pool)
+        .bind(&model.name)
+        .bind(&model.description)
+        .bind(&capability_tags_json)
+        .bind(&size_tags_json)
+        .bind(model.cloud_tag)
+        .bind(&model.url)
+        .fetch_one(&mut *tx)
         .await?;
+
+        sqlx::query("DELETE FROM model_variants WHERE model_id = ?")
+            .bind(model_id)
+            .execute(&mut *tx)
+            .await?;
+
+        for variant in &model.model_variants {
+            sqlx::query(
+                "INSERT INTO model_variants (model_id, model_identifier, size, context, input, url)
+                 VALUES (?, ?, ?, ?, ?, ?)"
+            )
+            .bind(model_id)
+            .bind(&variant.model_identifier)
+            .bind(&variant.size)
+            .bind(&variant.context)
+            .bind(&variant.input)
+            .bind(&variant.url)
+            .execute(&mut *tx)
+            .await?;
+        }
+
+        println!("{} {}", "[ollamadex]".bright_blue(), format!("Model staged for save: {} - {}", model.name, model.url).dimmed());
     }
 
-    println!("{} {}", "[ollamadex]".bright_blue(), format!("Model saved to database: {} - {}", model.name, model.url).dimmed());
+    tx.commit().await?;
+
+    println!("{} {}", "[ollamadex]".bright_blue(), format!("Saved {} models to database", models.len()).dimmed());
 
     Ok(())
 }

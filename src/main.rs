@@ -97,12 +97,10 @@ async fn query_ollama(State(app_state): State<AppState>, Query(params): Query<Se
                 })?;
 
             // save the scraped models to the database
-            for scraped_model in scraped_models_data {
-                database::save_model(&pool, &scraped_model).await.map_err(|e| {
-                    eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Database error:".red(), e.to_string().dimmed());
-                    ApiError::InternalError
-                })?;
-            }
+            database::save_models(&pool, &scraped_models_data).await.map_err(|e| {
+                eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Database error:".red(), e.to_string().dimmed());
+                ApiError::InternalError
+            })?;
 
             // find models relevant to the query
             let query_results = database::find_models_relevant_to_query(&pool, &query).await.map_err(|e| {
@@ -144,12 +142,10 @@ async fn find_model(State(app_state): State<AppState>, Json(params): Json<FindMo
                 })?;
 
             // save the scraped models to the database
-            for scraped_model in scraped_models_data {
-                database::save_model(&pool, &scraped_model).await.map_err(|e| {
-                    eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Database error:".red(), e.to_string().dimmed());
-                    ApiError::InternalError
-                })?;
-            }
+            database::save_models(&pool, &scraped_models_data).await.map_err(|e| {
+                eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Database error:".red(), e.to_string().dimmed());
+                ApiError::InternalError
+            })?;
 
             // find the model in the database
             let model: Option<OllamaModelData> = database::find_model_by_href(&pool, &href).await.map_err(|e| {
