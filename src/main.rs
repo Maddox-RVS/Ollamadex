@@ -288,7 +288,23 @@ async fn main() {
         eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Failed to get ADMIN_API_KEY from environment variables:".red(), "Please set the ADMIN_API_KEY environment variable in your \".env\" file".dimmed());
         std::process::exit(1);
     });
+
+    let server_mode = env::var("SERVER_MODE").unwrap_or_else(|_| {
+        eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Failed to get SERVER_MODE from environment variables:".red(), "Please set the SERVER_MODE environment variable in your \".env\" file".dimmed());
+        std::process::exit(1);
+    });
+
+    let bind_address = match server_mode.as_str() {
+        "public" => format!("0.0.0.0:{}", port),
+        "private" => format!("127.0.0.1:{}", port),
+        _ => {
+            eprintln!("{} {} {}", "[ollamadex]".bright_blue(), format!("Invalid SERVER_MODE value of \"{}\":", server_mode).red(), "Please set the SERVER_MODE environment variable to either 'public' or 'private' in your \".env\" file".dimmed());
+            std::process::exit(1);
+        }
+    };
     
+    println!("{} {} {}", "[ollamadex]".bright_blue(), "Server mode:".dimmed(), server_mode.dimmed());
+
     let pool = database::initialize_database().await.unwrap_or_else(|e| {
         eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Failed to initialize database:".red(), e.to_string().dimmed());
         std::process::exit(1);
@@ -298,7 +314,7 @@ async fn main() {
 
     let app = create_app(pool, api_key);
 
-    let listener = TcpListener::bind(format!("0.0.0.0:{}", port)).await
+    let listener = TcpListener::bind(bind_address).await
         .unwrap_or_else(|_| {
             eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Failed to bind to port:".red(), port.bold().red());
             std::process::exit(1);

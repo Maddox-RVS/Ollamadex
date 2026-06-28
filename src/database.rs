@@ -13,7 +13,7 @@ pub async fn initialize_database() -> Result<Pool<Sqlite>, sqlx::Error> {
 
     let options = SqliteConnectOptions::from_str(database_url)?
         .foreign_keys(true);
-    
+
     let pool = SqlitePool::connect_with(options).await?;
 
     sqlx::query(
