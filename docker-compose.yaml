@@ -6,3 +6,5 @@ services:
     environment:
       - PORT=${PORT:-3000}
     network_mode: host
+    env_file:
+      - .env

@@ -1,0 +1,20 @@
+# git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yaml
+.dockerignore
+
+# Rust builds
+/target
+
+# Ollama database
+ollamadex.db
+ollamadex.db-shm
+ollamadex.db-wal
+
+# Environment variables
+.env
+*.env
