@@ -12,7 +12,8 @@ pub async fn initialize_database() -> Result<Pool<Sqlite>, sqlx::Error> {
     let database_url: &str = "sqlite://ollamadex.db?mode=rwc";
 
     let options = SqliteConnectOptions::from_str(database_url)?
-        .foreign_keys(true);
+        .foreign_keys(true)
+        .journal_mode(sqlx::sqlite::SqliteJournalMode::Wal);
 
     let pool = SqlitePool::connect_with(options).await?;
 

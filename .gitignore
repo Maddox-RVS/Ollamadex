@@ -1,3 +1,10 @@
+# Rust builds
 /target
+
+# Ollama database
 ollamadex.db
+ollamadex.db-shm
+ollamadex.db-wal
+
+# Environment variables
 .env
