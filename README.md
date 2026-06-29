@@ -83,14 +83,52 @@ Before setting up Ollamadex, make sure you have the following installed:
 > cd Ollamadex
 > ```
 
-### 2). Configure API Key:
+### 2). Configure Environment
 
-Create a `.env` file in the root of your project directory and set your administrative API key. This key is required for all protected endpoints like updating cache settings or thresholds:
-
+> **1).** Create a `.env` file in the root of your project directory.   
+>
+> ---
+> **2).** Set your administrative API key. This key is required for all protected endpoints like updating cache settings or thresholds:
+>
 > **`.env`**  
 > ```bash
 > ADMIN_API_KEY=your_secure_api_key_here
 > ```
+> ---
+> **3).** Set the server mode to either `private` or `public`. Private means that the server will only respond to requests from the host machine, while public responds to requests from anything.  
+>
+> **`.env`**
+> ```bash
+> SERVER_MODE=private
+> ```
+> or  
+>
+> **`.env`**
+> ```bash
+> SERVER_MODE=public
+> ```
+> ---
+> **4).** Set the port number (0-65535) the server should listen on.
+>
+> **`.env`**
+> ```bash
+> PORT=3000
+> ```
+> ---
+> **The full server `.env` should look as follows:**
+>
+> **`.env`**
+> ```bash
+> ADMIN_API_KEY=your_secure_api_key_here
+> SERVER_MODE=private
+> PORT=3000
+> ```
+>
+> | **`.env`** Variables | Required |
+> | -------------------- | -------- |
+> | `ADMIN_API_KEY`      | Yes      |
+> | `SERVER_MODE`        | Yes      |
+> | `PORT`               | Yes      |
 
 ### 3). Run it:
 
@@ -98,17 +136,13 @@ Create a `.env` file in the root of your project directory and set your administ
 > ```bash
 > docker compose up --build
 > ```
-> By default the server listens on port `3000`. Override it by setting `PORT`:
-> ```bash
-> PORT=8080 docker compose up --build
-> ```
 
 > **Option B - with Cargo:**
 > ```bash
-> cargo run --release -- --port 3000
+> cargo run --release
 > ```
 
-**Note:** *If the `.env` file is missing or `ADMIN_API_KEY` cannot be read, the server will panic on startup and print an error requesting the `ADMIN_API_KEY` be set properly in the `.env` file.*
+**Note:** *If the `.env` file is missing or required environment variables cannot be read, the server will panic on startup and print an error requesting the environment variables be set properly in the `.env` file.*
 
 ## API Reference
 
