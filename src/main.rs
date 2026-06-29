@@ -39,14 +39,14 @@ impl IntoResponse for ApiError {
 async fn query_ollama(State(app_state): State<AppState>, Query(params): Query<SearchParams>) -> Result<Json<Value>, ApiError> {
     let pool = &app_state.pool;
 
+    let query: String = params.query.trim().to_lowercase();
+    println!("{} {}", "[ollamadex]".bright_blue(), format!("{} \"/search?query={}\"", "GET".green(), &query).dimmed());
+    if query.is_empty() { return Err(ApiError::InvalidInput("Query cannot be empty".into())); }
+
     let accepted_similarity_threshold: f64 = database::get_cache_similarity_threshold(&pool).await.map_err(|e| {
         eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Database error:".red(), e.to_string().dimmed());
         ApiError::InternalError
     })?;
-
-    let query: String = params.query.trim().to_lowercase();
-    println!("{} {}", "[ollamadex]".bright_blue(), format!("{} \"/search?query={}\"", "GET".green(), &query).dimmed());
-    if query.is_empty() { return Err(ApiError::InvalidInput("Query cannot be empty".into())); }
 
     let previous_queries = database::get_non_stale_queries(&pool).await.map_err(|e| {
         eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Database error:".red(), e.to_string().dimmed());
