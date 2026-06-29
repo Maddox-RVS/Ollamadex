@@ -9,7 +9,6 @@ use owo_colors::OwoColorize;
 use sqlx::{Pool, Sqlite};
 use axum::extract::State;
 use serde::Deserialize;
-use clap::Parser;
 use std::env;
 use dotenvy;
 
@@ -261,18 +260,8 @@ fn create_app(pool: Pool<Sqlite>, api_key: String) -> Router {
         .with_state(app_state)
 }
 
-#[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
-struct Args {
-    #[arg(short, long, default_value_t = 3000)]
-    port: u16,
-}
-
 #[tokio::main]
 async fn main() {
-    let args: Args = Args::parse();
-    let port: u16 = args.port;
-
     println!();
     println!("{}", " ██████╗ ██╗     ██╗      █████╗ ███╗   ███╗ █████╗ ██████╗ ███████╗██╗  ██╗".bright_blue());
     println!("{}", "██╔═══██╗██║     ██║     ██╔══██╗████╗ ████║██╔══██╗██╔══██╗██╔════╝╚██╗██╔╝".bright_blue());
@@ -288,6 +277,24 @@ async fn main() {
         eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Failed to get ADMIN_API_KEY from environment variables:".red(), "Please set the ADMIN_API_KEY environment variable in your \".env\" file".dimmed());
         std::process::exit(1);
     });
+
+    let port_string = env::var("PORT").unwrap_or_else(|_| {
+        eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Failed to get PORT from environment variables:".red(), "Please set the PORT environment variable in your \".env\" file".dimmed());
+        std::process::exit(1);
+    });
+
+    let port: u16 = match port_string.parse::<u16>() {
+        Ok(p) => p,
+        Err(_) => {
+            eprintln!(
+                "{} {} {}", 
+                "[ollamadex]".bright_blue(), 
+                format!("Invalid PORT value of \"{}\": ", port_string).red(), 
+                "Please set the PORT environment variable to a valid number between 0 and 65535 in your \".env\" file".dimmed()
+            );
+            std::process::exit(1);
+        }
+    };
 
     let server_mode = env::var("SERVER_MODE").unwrap_or_else(|_| {
         eprintln!("{} {} {}", "[ollamadex]".bright_blue(), "Failed to get SERVER_MODE from environment variables:".red(), "Please set the SERVER_MODE environment variable in your \".env\" file".dimmed());
